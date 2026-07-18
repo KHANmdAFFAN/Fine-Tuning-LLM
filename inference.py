@@ -2,16 +2,21 @@
 inference.py
 
 Inference module for the HR Policy Assistant.
-Loads the fine-tuned model from Hugging Face once and
-provides a reusable generate_response() function.
+Loads the Hugging Face model once and provides
+generate_response() for Gradio or CLI usage.
 """
+
+# ==========================================================
+# IMPORTANT
+# ==========================================================
+
+import unsloth
 
 import argparse
 import logging
-from typing import Optional, Tuple
+from typing import Optional
 
 import torch
-from transformers import PreTrainedTokenizerBase
 from unsloth import FastLanguageModel
 
 # ==========================================================
@@ -30,7 +35,7 @@ logger = logging.getLogger(__name__)
 # ==========================================================
 
 CONFIG = {
-    "model_path": "Toji619/hr-policy-assistant-model",
+    "model_name": "Toji619/hr-policy-assistant-model",
     "max_seq_length": 2048,
     "load_in_4bit": True,
     "max_new_tokens": 200,
@@ -65,32 +70,19 @@ PROMPT_NO_INPUT = """Below is an instruction that describes a task. Write a resp
 # Load Model
 # ==========================================================
 
-def load_model(
-    model_path: Optional[str] = None,
-) -> Tuple[torch.nn.Module, PreTrainedTokenizerBase]:
+logger.info("Loading model...")
 
-    path = model_path or CONFIG["model_path"]
+MODEL, TOKENIZER = FastLanguageModel.from_pretrained(
+    model_name=CONFIG["model_name"],
+    max_seq_length=CONFIG["max_seq_length"],
+    load_in_4bit=CONFIG["load_in_4bit"],
+)
 
-    logger.info(f"Loading model from {path}")
+FastLanguageModel.for_inference(MODEL)
 
-    model, tokenizer = FastLanguageModel.from_pretrained(
-        model_name=path,
-        max_seq_length=CONFIG["max_seq_length"],
-        load_in_4bit=CONFIG["load_in_4bit"],
-    )
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
-    FastLanguageModel.for_inference(model)
-
-    logger.info("Model loaded successfully.")
-
-    return model, tokenizer
-
-
-# ==========================================================
-# Load model only once
-# ==========================================================
-
-MODEL, TOKENIZER = load_model()
+logger.info(f"Using device : {DEVICE}")
 
 # ==========================================================
 # Prompt Builder
@@ -110,7 +102,6 @@ def build_prompt(
 
     return PROMPT_NO_INPUT.format(question)
 
-
 # ==========================================================
 # Generate Response
 # ==========================================================
@@ -121,23 +112,24 @@ def generate_response(
     max_new_tokens: Optional[int] = None,
 ) -> str:
 
-    prompt = build_prompt(question, input_text)
-
-    device = next(MODEL.parameters()).device
+    prompt = build_prompt(
+        question,
+        input_text,
+    )
 
     inputs = TOKENIZER(
         prompt,
         return_tensors="pt",
-    ).to(device)
+    ).to(DEVICE)
 
     with torch.inference_mode():
 
         outputs = MODEL.generate(
             **inputs,
             max_new_tokens=max_new_tokens or CONFIG["max_new_tokens"],
+            do_sample=False,
             temperature=CONFIG["temperature"],
             top_p=CONFIG["top_p"],
-            do_sample=False,
             use_cache=True,
         )
 
@@ -151,39 +143,33 @@ def generate_response(
 
     return decoded.strip()
 
-
 # ==========================================================
-# Command Line Interface
+# CLI
 # ==========================================================
 
 def parse_args():
 
-    parser = argparse.ArgumentParser(
-        description="HR Policy Assistant Inference",
-    )
+    parser = argparse.ArgumentParser()
 
     parser.add_argument(
         "--question",
-        type=str,
         required=True,
-        help="HR-related question",
+        type=str,
     )
 
     parser.add_argument(
         "--input-text",
-        type=str,
         default="",
-        help="Optional additional context",
+        type=str,
     )
 
     parser.add_argument(
         "--max-new-tokens",
+        default=200,
         type=int,
-        default=CONFIG["max_new_tokens"],
     )
 
     return parser.parse_args()
-
 
 # ==========================================================
 # Main
@@ -199,12 +185,12 @@ def main():
         max_new_tokens=args.max_new_tokens,
     )
 
-    print("\n" + "=" * 60)
+    print("\n")
+    print("=" * 70)
     print("HR Policy Assistant")
-    print("=" * 60)
+    print("=" * 70)
     print(response)
-    print("=" * 60)
-
+    print("=" * 70)
 
 if __name__ == "__main__":
     main()
