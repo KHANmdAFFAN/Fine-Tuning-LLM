@@ -2,13 +2,12 @@
 inference.py
 
 Inference module for the HR Policy Assistant.
-Loads the fine-tuned model once and provides a reusable
-generate_response() function.
+Loads the fine-tuned model from Hugging Face once and
+provides a reusable generate_response() function.
 """
 
 import argparse
 import logging
-import os
 from typing import Optional, Tuple
 
 import torch
@@ -30,23 +29,8 @@ logger = logging.getLogger(__name__)
 # Configuration
 # ==========================================================
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
 CONFIG = {
-    # ------------------------------------------------------
-    # FOR LOCAL TESTING
-    # ------------------------------------------------------
-    "model_path": "Toji619/hr-policy-assistant-model"
-    ),
-
-    # ------------------------------------------------------
-    # AFTER UPLOADING TO HUGGING FACE
-    # Replace the above with:
-    #
-    # "model_path": "KHANmdAFFAN/hr-policy-assistant-model",
-    #
-    # ------------------------------------------------------
-
+    "model_path": "Toji619/hr-policy-assistant-model",
     "max_seq_length": 2048,
     "load_in_4bit": True,
     "max_new_tokens": 200,
@@ -87,7 +71,7 @@ def load_model(
 
     path = model_path or CONFIG["model_path"]
 
-    logger.info("Loading model: %s", path)
+    logger.info(f"Loading model from {path}")
 
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=path,
@@ -101,8 +85,9 @@ def load_model(
 
     return model, tokenizer
 
+
 # ==========================================================
-# Load Once
+# Load model only once
 # ==========================================================
 
 MODEL, TOKENIZER = load_model()
@@ -117,12 +102,14 @@ def build_prompt(
 ) -> str:
 
     if input_text.strip():
+
         return PROMPT_WITH_INPUT.format(
             question,
             input_text,
         )
 
     return PROMPT_NO_INPUT.format(question)
+
 
 # ==========================================================
 # Generate Response
@@ -164,6 +151,7 @@ def generate_response(
 
     return decoded.strip()
 
+
 # ==========================================================
 # Command Line Interface
 # ==========================================================
@@ -185,7 +173,7 @@ def parse_args():
         "--input-text",
         type=str,
         default="",
-        help="Optional context",
+        help="Optional additional context",
     )
 
     parser.add_argument(
@@ -195,6 +183,7 @@ def parse_args():
     )
 
     return parser.parse_args()
+
 
 # ==========================================================
 # Main
