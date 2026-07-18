@@ -10,7 +10,8 @@ from unsloth import FastLanguageModel
 
 
 DEFAULT_CONFIG: Dict[str, Any] = {
-    "project_dir": os.path.abspath(os.path.join(os.getcwd(), "project_outputs")),
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    "project_dir": os.path.abspath(BASE_DIR, "project_outputs")),
     "data_path": os.path.abspath(os.path.join(os.getcwd(), "data", "hr_policy_finetune_1.jsonl")),
     "stage1_adapter": os.path.abspath(os.path.join(os.getcwd(), "project_outputs", "Adapter", "non_instruction_self_hr_policy_adapter")),
     "merged_stage1": os.path.abspath(os.path.join(os.getcwd(), "project_outputs", "Merged", "stage1_merged")),
