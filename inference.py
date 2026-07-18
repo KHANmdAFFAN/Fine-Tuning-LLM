@@ -3,7 +3,7 @@ inference.py
 
 Inference module for the HR Policy Assistant.
 Loads the fine-tuned model once and provides a reusable
-generate_response() function for Gradio or CLI usage.
+generate_response() function.
 """
 
 import argparse
@@ -33,12 +33,24 @@ logger = logging.getLogger(__name__)
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 CONFIG = {
+    # ------------------------------------------------------
+    # FOR LOCAL TESTING
+    # ------------------------------------------------------
     "model_path": os.path.join(
         BASE_DIR,
         "project_outputs",
         "Merged",
         "stage2_merged",
     ),
+
+    # ------------------------------------------------------
+    # AFTER UPLOADING TO HUGGING FACE
+    # Replace the above with:
+    #
+    # "model_path": "KHANmdAFFAN/hr-policy-assistant-model",
+    #
+    # ------------------------------------------------------
+
     "max_seq_length": 2048,
     "load_in_4bit": True,
     "max_new_tokens": 200,
@@ -69,7 +81,6 @@ PROMPT_NO_INPUT = """Below is an instruction that describes a task. Write a resp
 ### Response:
 """
 
-
 # ==========================================================
 # Load Model
 # ==========================================================
@@ -80,10 +91,7 @@ def load_model(
 
     path = model_path or CONFIG["model_path"]
 
-    if not os.path.exists(path):
-        raise FileNotFoundError(f"Model not found: {path}")
-
-    logger.info("Loading model from %s", path)
+    logger.info("Loading model: %s", path)
 
     model, tokenizer = FastLanguageModel.from_pretrained(
         model_name=path,
@@ -97,13 +105,11 @@ def load_model(
 
     return model, tokenizer
 
-
 # ==========================================================
-# Load once
+# Load Once
 # ==========================================================
 
 MODEL, TOKENIZER = load_model()
-
 
 # ==========================================================
 # Prompt Builder
@@ -115,14 +121,12 @@ def build_prompt(
 ) -> str:
 
     if input_text.strip():
-
         return PROMPT_WITH_INPUT.format(
             question,
             input_text,
         )
 
     return PROMPT_NO_INPUT.format(question)
-
 
 # ==========================================================
 # Generate Response
@@ -164,9 +168,8 @@ def generate_response(
 
     return decoded.strip()
 
-
 # ==========================================================
-# CLI
+# Command Line Interface
 # ==========================================================
 
 def parse_args():
@@ -196,7 +199,6 @@ def parse_args():
     )
 
     return parser.parse_args()
-
 
 # ==========================================================
 # Main
