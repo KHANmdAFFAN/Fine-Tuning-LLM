@@ -36,11 +36,7 @@ CONFIG = {
     # ------------------------------------------------------
     # FOR LOCAL TESTING
     # ------------------------------------------------------
-    "model_path": os.path.join(
-        BASE_DIR,
-        "project_outputs",
-        "Merged",
-        "stage2_merged",
+    "model_path": "Toji619/hr-policy-assistant-model"
     ),
 
     # ------------------------------------------------------
