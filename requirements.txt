@@ -1,12 +1,11 @@
 torch
 transformers
 datasets
-accelerate
-peft
 trl
+unsloth
+peft
+accelerate
 bitsandbytes
-sentencepiece
 gradio
-huggingface_hub
-pandas
-numpy
+sentencepiece
+protobuf
